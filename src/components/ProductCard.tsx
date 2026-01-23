@@ -25,6 +25,7 @@ export function ProductCard({ product }: ProductCardProps) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           price_id: product.priceId,
@@ -35,8 +36,6 @@ export function ProductCard({ product }: ProductCardProps) {
       })
 
       const data = await response.json()
-      console.log('Response status:', response.status)
-      console.log('Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create checkout session')
