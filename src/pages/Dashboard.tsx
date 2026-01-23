@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useSubscription } from '../hooks/useSubscription'
 import { SubscriptionStatus } from '../components/SubscriptionStatus'
-import { Plus, Eye, EyeOff, CreditCard as Edit2, Trash2, Key, LogOut, CreditCard } from 'lucide-react'
+import { Plus, Eye, EyeOff, CreditCard as Edit2, Trash2, Key, LogOut, CreditCard, Crown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface Secret {
@@ -16,16 +17,21 @@ interface Secret {
 
 export function Dashboard() {
   const { user, signOut } = useAuth()
+  const { subscription } = useSubscription()
   const [secrets, setSecrets] = useState<Secret[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingSecret, setEditingSecret] = useState<Secret | null>(null)
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set())
+  const [showLimitWarning, setShowLimitWarning] = useState(false)
   const [formData, setFormData] = useState({
     project_name: '',
     key_label: '',
     secret_value: ''
   })
+
+  const isPro = subscription?.subscription_status === 'active'
+  const canAddMoreSecrets = isPro || secrets.length < 3
 
   useEffect(() => {
     fetchSecrets()
@@ -49,30 +55,48 @@ export function Dashboard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    // Check limit for new secrets (not edits)
+    if (!editingSecret && !canAddMoreSecrets) {
+      setShowLimitWarning(true)
+      return
+    }
+
     try {
       if (editingSecret) {
         const { error } = await supabase
           .from('secrets')
           .update(formData)
           .eq('id', editingSecret.id)
-        
+
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('secrets')
           .insert([{ ...formData, user_id: user?.id }])
-        
+
         if (error) throw error
       }
 
       setFormData({ project_name: '', key_label: '', secret_value: '' })
       setShowForm(false)
       setEditingSecret(null)
+      setShowLimitWarning(false)
       fetchSecrets()
     } catch (error) {
       console.error('Error saving secret:', error)
     }
+  }
+
+  const handleAddSecret = () => {
+    if (!canAddMoreSecrets) {
+      setShowLimitWarning(true)
+      return
+    }
+    setShowForm(true)
+    setEditingSecret(null)
+    setFormData({ project_name: '', key_label: '', secret_value: '' })
+    setShowLimitWarning(false)
   }
 
   const handleEdit = (secret: Secret) => {
@@ -162,11 +186,7 @@ export function Dashboard() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Your Secrets</h2>
             <button
-              onClick={() => {
-                setShowForm(true)
-                setEditingSecret(null)
-                setFormData({ project_name: '', key_label: '', secret_value: '' })
-              }}
+              onClick={handleAddSecret}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -174,57 +194,83 @@ export function Dashboard() {
             </button>
           </div>
 
+          {/* Limit Warning */}
+          {showLimitWarning && (
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 mb-6 text-white shadow-lg">
+              <div className="flex items-start">
+                <Crown className="h-6 w-6 mr-3 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">Free Plan Limit Reached</h3>
+                  <p className="text-indigo-100 mb-4">
+                    You've reached the maximum of 3 secrets on the free plan. Upgrade to Pro to store unlimited secrets and unlock premium features.
+                  </p>
+                  <Link
+                    to="/pricing"
+                    className="inline-flex items-center px-4 py-2 bg-white text-indigo-600 font-medium rounded-md hover:bg-indigo-50 transition-colors"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Upgrade to Pro
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Add/Edit Form */}
           {showForm && (
-            <div className="bg-white shadow rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 shadow-xl rounded-lg p-6 mb-6 border border-slate-700">
+              <h3 className="text-lg font-semibold text-white mb-4">
                 {editingSecret ? 'Edit Secret' : 'Add New Secret'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Project Name</label>
+                  <label className="block text-sm font-medium text-slate-200 mb-1">Project Name</label>
                   <input
                     type="text"
                     required
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-400"
+                    placeholder="e.g., My Website"
                     value={formData.project_name}
                     onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Key Label</label>
+                  <label className="block text-sm font-medium text-slate-200 mb-1">Key Label</label>
                   <input
                     type="text"
                     required
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-400"
+                    placeholder="e.g., API_KEY"
                     value={formData.key_label}
                     onChange={(e) => setFormData({ ...formData, key_label: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Secret Value</label>
+                  <label className="block text-sm font-medium text-slate-200 mb-1">Secret Value</label>
                   <textarea
                     required
                     rows={3}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-400 font-mono text-sm"
+                    placeholder="Paste your secret value here"
                     value={formData.secret_value}
                     onChange={(e) => setFormData({ ...formData, secret_value: e.target.value })}
                   />
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-3 pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setShowForm(false)
                       setEditingSecret(null)
+                      setShowLimitWarning(false)
                     }}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="px-4 py-2 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
                     {editingSecret ? 'Update' : 'Save'}
                   </button>
