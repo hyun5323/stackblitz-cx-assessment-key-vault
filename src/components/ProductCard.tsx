@@ -35,6 +35,8 @@ export function ProductCard({ product }: ProductCardProps) {
       })
 
       const data = await response.json()
+      console.log('Response status:', response.status)
+      console.log('Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create checkout session')
