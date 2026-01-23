@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { SubscriptionStatus } from '../components/SubscriptionStatus'
-import { Plus, Eye, EyeOff, Edit2, Trash2, Key, LogOut, CreditCard } from 'lucide-react'
+import { Plus, Eye, EyeOff, CreditCard as Edit2, Trash2, Key, LogOut, CreditCard } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface Secret {
