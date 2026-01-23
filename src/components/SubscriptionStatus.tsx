@@ -1,5 +1,5 @@
 import { useSubscription } from '../hooks/useSubscription'
-import { stripeProducts } from '../stripe-config'
+import { STRIPE_PRODUCTS } from '../stripe-config'
 import { Crown, Loader2 } from 'lucide-react'
 
 export function SubscriptionStatus() {
@@ -22,7 +22,7 @@ export function SubscriptionStatus() {
     )
   }
 
-  const product = stripeProducts.find(p => p.priceId === subscription.price_id)
+  const product = STRIPE_PRODUCTS.find(p => p.priceId === subscription.price_id)
   
   return (
     <div className="flex items-center space-x-2 text-blue-600">

@@ -1,4 +1,4 @@
-import { stripeProducts } from '../stripe-config'
+import { STRIPE_PRODUCTS } from '../stripe-config'
 import { ProductCard } from '../components/ProductCard'
 
 export function PricingPage() {
@@ -15,7 +15,7 @@ export function PricingPage() {
         </div>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-3 lg:gap-x-8">
-          {stripeProducts.map((product) => (
+          {STRIPE_PRODUCTS.map((product) => (
             <ProductCard key={product.priceId} product={product} />
           ))}
         </div>
