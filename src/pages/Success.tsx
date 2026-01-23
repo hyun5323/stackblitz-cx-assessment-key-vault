@@ -1,99 +1,82 @@
-import React, { useEffect, useState } from 'react'
-import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react'
+import React, { useEffect } from 'react'
+import { CheckCircle, ArrowRight } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useStripe } from '../hooks/useStripe'
 
 export function Success() {
   const [searchParams] = useSearchParams()
-  const [orderDetails, setOrderDetails] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const { refetch } = useStripe()
   const sessionId = searchParams.get('session_id')
 
   useEffect(() => {
-    const fetchOrderDetails = async () => {
-      if (!sessionId) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('stripe_user_orders')
-          .select('*')
-          .eq('checkout_session_id', sessionId)
-          .single()
-
-        if (error) {
-          console.error('Error fetching order:', error)
-        } else {
-          setOrderDetails(data)
-        }
-      } catch (error) {
-        console.error('Error:', error)
-      } finally {
-        setLoading(false)
-      }
+    // Refetch Stripe data to update the user's subscription/order status
+    if (sessionId) {
+      // Add a small delay to ensure webhook has processed
+      setTimeout(() => {
+        refetch()
+      }, 2000)
     }
-
-    fetchOrderDetails()
-  }, [sessionId])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-      </div>
-    )
-  }
+  }, [sessionId, refetch])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
-        
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Payment Successful!
-        </h1>
-        
-        <p className="text-gray-600 mb-6">
-          Thank you for upgrading to Key Vault Pro! You now have lifetime access to all premium features.
-        </p>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            Payment Successful!
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Welcome to Key Vault Pro! Your purchase has been completed successfully.
+          </p>
+        </div>
 
-        {orderDetails && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-            <h3 className="font-semibold text-gray-900 mb-2">Order Details</h3>
-            <div className="space-y-1 text-sm text-gray-600">
-              <div className="flex justify-between">
-                <span>Product:</span>
-                <span>Key Vault Pro</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Amount:</span>
-                <span>${(orderDetails.amount_total / 100).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Status:</span>
-                <span className="capitalize text-green-600">{orderDetails.order_status}</span>
-              </div>
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            What's Next?
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-start">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+              <span className="text-sm text-gray-700">
+                You now have lifetime access to Key Vault Pro features
+              </span>
+            </div>
+            <div className="flex items-start">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+              <span className="text-sm text-gray-700">
+                Unlimited secret storage is now available
+              </span>
+            </div>
+            <div className="flex items-start">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+              <span className="text-sm text-gray-700">
+                Advanced masking features are enabled
+              </span>
+            </div>
+            <div className="flex items-start">
+              <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
+              <span className="text-sm text-gray-700">
+                Priority support is now active
+              </span>
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="space-y-3">
+        <div className="text-center">
           <Link
             to="/dashboard"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
           >
             Go to Dashboard
-            <ArrowRight className="w-5 h-5 ml-2" />
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
-          
-          <Link
-            to="/"
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-6 rounded-lg font-semibold transition-colors"
-          >
-            Back to Home
-          </Link>
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs text-gray-500">
+            Session ID: {sessionId || 'N/A'}
+          </p>
         </div>
       </div>
     </div>

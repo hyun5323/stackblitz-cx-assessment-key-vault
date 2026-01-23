@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export type Database = {
@@ -37,36 +41,31 @@ export type Database = {
           updated_at?: string
         }
       }
-      user_profiles: {
+      stripe_customers: {
         Row: {
-          id: string
-          email: string | null
-          is_pro: boolean
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
-          subscription_status: string | null
+          id: number
+          user_id: string
+          customer_id: string
           created_at: string
           updated_at: string
+          deleted_at: string | null
         }
-        Insert: {
-          id: string
-          email?: string | null
-          is_pro?: boolean
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          subscription_status?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string | null
-          is_pro?: boolean
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          subscription_status?: string | null
-          created_at?: string
-          updated_at?: string
+      }
+      stripe_subscriptions: {
+        Row: {
+          id: number
+          customer_id: string
+          subscription_id: string | null
+          price_id: string | null
+          current_period_start: number | null
+          current_period_end: number | null
+          cancel_at_period_end: boolean | null
+          payment_method_brand: string | null
+          payment_method_last4: string | null
+          status: string
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
         }
       }
       stripe_orders: {
@@ -79,7 +78,7 @@ export type Database = {
           amount_total: number
           currency: string
           payment_status: string
-          status: 'pending' | 'completed' | 'canceled'
+          status: string
           created_at: string
           updated_at: string
           deleted_at: string | null
@@ -87,6 +86,19 @@ export type Database = {
       }
     }
     Views: {
+      stripe_user_subscriptions: {
+        Row: {
+          customer_id: string | null
+          subscription_id: string | null
+          subscription_status: string | null
+          price_id: string | null
+          current_period_start: number | null
+          current_period_end: number | null
+          cancel_at_period_end: boolean | null
+          payment_method_brand: string | null
+          payment_method_last4: string | null
+        }
+      }
       stripe_user_orders: {
         Row: {
           customer_id: string | null
@@ -97,7 +109,7 @@ export type Database = {
           amount_total: number | null
           currency: string | null
           payment_status: string | null
-          order_status: 'pending' | 'completed' | 'canceled' | null
+          order_status: string | null
           order_date: string | null
         }
       }
