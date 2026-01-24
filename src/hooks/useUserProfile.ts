@@ -30,10 +30,11 @@ export function useUserProfile() {
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching profile:', error)
+        setLoading(false)
         return
       }
 
@@ -47,10 +48,11 @@ export function useUserProfile() {
             is_pro: false
           })
           .select()
-          .single()
+          .maybeSingle()
 
         if (insertError) {
           console.error('Error creating profile:', insertError)
+          setLoading(false)
           return
         }
 

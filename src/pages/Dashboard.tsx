@@ -17,7 +17,7 @@ interface Secret {
 
 export function Dashboard() {
   const { user, signOut } = useAuth()
-  const { profile } = useUserProfile()
+  const { profile, loading: profileLoading } = useUserProfile()
   const [secrets, setSecrets] = useState<Secret[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -161,13 +161,15 @@ export function Dashboard() {
             
             <div className="flex items-center space-x-4">
               <SubscriptionStatus />
-              <Link
-                to="/pricing"
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Upgrade
-              </Link>
+              {!profileLoading && !isPro && (
+                <Link
+                  to="/pricing"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Upgrade
+                </Link>
+              )}
               <span className="text-sm text-gray-600">{user?.email}</span>
               <button
                 onClick={signOut}
