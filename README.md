@@ -107,6 +107,12 @@ npm run dev
 npm run build
 ```
 
+## How to Test "Pro" Features
+
+1. Click the **"Upgrade to Pro"** button on the dashboard.
+2. Use the Stripe Test Card: 4242 4242 4242 4242.
+3. Once redirected back, verify the **"PRO"** badge appears and you can add more than 3 keys.
+
 ## Stripe Integration
 
 ### Edge Functions
