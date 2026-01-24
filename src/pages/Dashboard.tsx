@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { useSubscription } from '../hooks/useSubscription'
+import { useUserProfile } from '../hooks/useUserProfile'
 import { SubscriptionStatus } from '../components/SubscriptionStatus'
 import { Plus, Eye, EyeOff, CreditCard as Edit2, Trash2, Key, LogOut, CreditCard, Crown } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -17,7 +17,7 @@ interface Secret {
 
 export function Dashboard() {
   const { user, signOut } = useAuth()
-  const { subscription } = useSubscription()
+  const { profile } = useUserProfile()
   const [secrets, setSecrets] = useState<Secret[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -30,7 +30,7 @@ export function Dashboard() {
     secret_value: ''
   })
 
-  const isPro = subscription?.subscription_status === 'active'
+  const isPro = profile?.is_pro || false
   const canAddMoreSecrets = isPro || secrets.length < 3
 
   useEffect(() => {

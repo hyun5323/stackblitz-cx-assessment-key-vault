@@ -128,6 +128,37 @@ async function handleEvent(event: Stripe.Event) {
           console.error('Error inserting order:', orderError);
           return;
         }
+
+        // Update user_profiles to set is_pro = true
+        // First, get the user_id from stripe_customers table
+        const { data: customerData, error: customerError } = await supabase
+          .from('stripe_customers')
+          .select('user_id')
+          .eq('customer_id', customerId)
+          .single();
+
+        if (customerError) {
+          console.error('Error fetching customer data:', customerError);
+        } else if (customerData) {
+          // Update the user profile to set is_pro = true
+          const { error: profileError } = await supabase
+            .from('user_profiles')
+            .upsert({
+              id: customerData.user_id,
+              is_pro: true,
+              stripe_customer_id: customerId,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
+            });
+
+          if (profileError) {
+            console.error('Error updating user profile:', profileError);
+          } else {
+            console.info(`Successfully updated user profile to Pro for user: ${customerData.user_id}`);
+          }
+        }
+
         console.info(`Successfully processed one-time payment for session: ${checkout_session_id}`);
       } catch (error) {
         console.error('Error processing one-time payment:', error);

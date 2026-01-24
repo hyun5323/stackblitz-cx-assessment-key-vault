@@ -18,56 +18,61 @@ export function useUserProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchProfile = async () => {
     if (!user) {
       setProfile(null)
       setLoading(false)
       return
     }
 
-    const fetchProfile = async () => {
-      try {
-        const { data, error } = await supabase
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error)
+        return
+      }
+
+      if (!data) {
+        // Create profile if it doesn't exist
+        const { data: newProfile, error: insertError } = await supabase
           .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
+          .insert({
+            id: user.id,
+            email: user.email,
+            is_pro: false
+          })
+          .select()
           .single()
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching profile:', error)
+        if (insertError) {
+          console.error('Error creating profile:', insertError)
           return
         }
 
-        if (!data) {
-          // Create profile if it doesn't exist
-          const { data: newProfile, error: insertError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: user.id,
-              email: user.email,
-              is_pro: false
-            })
-            .select()
-            .single()
-
-          if (insertError) {
-            console.error('Error creating profile:', insertError)
-            return
-          }
-
-          setProfile(newProfile)
-        } else {
-          setProfile(data)
-        }
-      } catch (error) {
-        console.error('Error in fetchProfile:', error)
-      } finally {
-        setLoading(false)
+        setProfile(newProfile)
+      } else {
+        setProfile(data)
       }
+    } catch (error) {
+      console.error('Error in fetchProfile:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchProfile()
   }, [user])
 
-  return { profile, loading }
+  const refetch = async () => {
+    setLoading(true)
+    await fetchProfile()
+  }
+
+  return { profile, loading, refetch }
 }

@@ -1,9 +1,8 @@
-import { useSubscription } from '../hooks/useSubscription'
-import { STRIPE_PRODUCTS } from '../stripe-config'
+import { useUserProfile } from '../hooks/useUserProfile'
 import { Crown, Loader2 } from 'lucide-react'
 
 export function SubscriptionStatus() {
-  const { subscription, loading } = useSubscription()
+  const { profile, loading } = useUserProfile()
 
   if (loading) {
     return (
@@ -14,7 +13,7 @@ export function SubscriptionStatus() {
     )
   }
 
-  if (!subscription || !subscription.price_id) {
+  if (!profile?.is_pro) {
     return (
       <div className="flex items-center space-x-2 text-gray-600">
         <span>Free Plan</span>
@@ -22,12 +21,10 @@ export function SubscriptionStatus() {
     )
   }
 
-  const product = STRIPE_PRODUCTS.find(p => p.priceId === subscription.price_id)
-  
   return (
     <div className="flex items-center space-x-2 text-blue-600">
       <Crown className="h-4 w-4" />
-      <span>{product?.name || 'Pro Plan'}</span>
+      <span>Pro Plan</span>
     </div>
   )
 }

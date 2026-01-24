@@ -2,21 +2,58 @@ import React, { useEffect } from 'react'
 import { CheckCircle, ArrowRight } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useStripe } from '../hooks/useStripe'
+import { useUserProfile } from '../hooks/useUserProfile'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
 
 export function Success() {
   const [searchParams] = useSearchParams()
   const { refetch } = useStripe()
+  const { refetch: refetchProfile } = useUserProfile()
+  const { user } = useAuth()
   const sessionId = searchParams.get('session_id')
 
   useEffect(() => {
+    const updateProfile = async () => {
+      if (!user) return
+
+      // Immediately update the user profile to Pro
+      try {
+        const { error } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            is_pro: true,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          })
+
+        if (error) {
+          console.error('Error updating profile:', error)
+        } else {
+          console.log('Successfully updated profile to Pro')
+        }
+      } catch (error) {
+        console.error('Error in updateProfile:', error)
+      }
+
+      // Refetch profile to update UI
+      await refetchProfile()
+    }
+
     // Refetch Stripe data to update the user's subscription/order status
     if (sessionId) {
+      updateProfile()
+
       // Add a small delay to ensure webhook has processed
       setTimeout(() => {
         refetch()
+        refetchProfile()
       }, 2000)
     }
-  }, [sessionId, refetch])
+  }, [sessionId, refetch, refetchProfile, user])
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
